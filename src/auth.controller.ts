@@ -38,6 +38,16 @@ export class AuthController {
     }
 
     /**
+     * Login Administrador
+     * Pattern: auth.admin-login
+     */
+    @MessagePattern('auth.admin-login')
+    adminLogin(@Payload() data: any) {
+        console.log('[AUTH CONTROLLER] Mensaje recibido: auth.admin-login');
+        return this.authService.adminLogin(data);
+    }
+
+    /**
      * Health check
      * Pattern: auth.health
      */

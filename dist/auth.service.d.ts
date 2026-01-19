@@ -16,5 +16,14 @@ export declare class AuthService {
         success: boolean;
         message: string;
     };
+    adminLogin(data: any): {
+        success: boolean;
+        message: string;
+        token: string;
+        user: {
+            email: any;
+            role: string;
+        };
+    };
     private generateOtp;
 }

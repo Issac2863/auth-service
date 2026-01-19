@@ -153,6 +153,27 @@ let AuthService = class AuthService {
             message: 'OTP verificado correctamente'
         };
     }
+    adminLogin(data) {
+        console.log('[AUTH SERVICE] Admin login attempt:', data.email);
+        const VALID_ADMIN_EMAIL = 'admin@sevotec.com';
+        const VALID_ADMIN_PASS_HASH = '371eef82556f28f6cc80ce4c61d48aa0af47af38fcb5caa00c9bfa872dcb8135';
+        if (data.email === VALID_ADMIN_EMAIL && data.password === VALID_ADMIN_PASS_HASH) {
+            return {
+                success: true,
+                message: 'Bienvenido Administrador',
+                token: 'admin-mock-token-secure-2026',
+                user: {
+                    email: data.email,
+                    role: 'ADMIN'
+                }
+            };
+        }
+        throw new microservices_1.RpcException({
+            success: false,
+            message: 'Credenciales de administrador inválidas',
+            statusCode: 401
+        });
+    }
     generateOtp() {
         return Math.floor(10000000 + Math.random() * 90000000).toString();
     }

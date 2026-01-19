@@ -24,6 +24,15 @@ export declare class AuthController {
         success: boolean;
         message: string;
     };
+    adminLogin(data: any): {
+        success: boolean;
+        message: string;
+        token: string;
+        user: {
+            email: any;
+            role: string;
+        };
+    };
     healthCheck(): {
         status: string;
         service: string;

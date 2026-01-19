@@ -166,6 +166,38 @@ export class AuthService {
     }
 
     /**
+     * Login para Administradores
+     */
+    adminLogin(data: any) {
+        console.log('[AUTH SERVICE] Admin login attempt:', data.email);
+
+        // Credenciales hardcodeadas (Mock DB)
+        const VALID_ADMIN_EMAIL = 'admin@sevotec.com';
+        // Hash SHA-256 de 'S3cur1ty@EPN.2026'
+        const VALID_ADMIN_PASS_HASH = '371eef82556f28f6cc80ce4c61d48aa0af47af38fcb5caa00c9bfa872dcb8135';
+
+        // data.password YA VIENE hasheado desde el frontend (SHA-256 Hex)
+        // Por seguridad, comparamos los hashes
+        if (data.email === VALID_ADMIN_EMAIL && data.password === VALID_ADMIN_PASS_HASH) {
+            return {
+                success: true,
+                message: 'Bienvenido Administrador',
+                token: 'admin-mock-token-secure-2026',
+                user: {
+                    email: data.email,
+                    role: 'ADMIN'
+                }
+            };
+        }
+
+        throw new RpcException({
+            success: false,
+            message: 'Credenciales de administrador inválidas',
+            statusCode: 401
+        });
+    }
+
+    /**
      * Generar código OTP de 8 dígitos
      */
     private generateOtp(): string {

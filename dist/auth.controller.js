@@ -34,6 +34,10 @@ let AuthController = class AuthController {
         console.log('[AUTH CONTROLLER] Mensaje recibido: auth.verify-otp');
         return this.authService.verifyOtp(data.cedula, { otpCode: data.otpCode });
     }
+    adminLogin(data) {
+        console.log('[AUTH CONTROLLER] Mensaje recibido: auth.admin-login');
+        return this.authService.adminLogin(data);
+    }
     healthCheck() {
         return { status: 'ok', service: 'auth-service', timestamp: new Date().toISOString() };
     }
@@ -60,6 +64,13 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "verifyOtp", null);
+__decorate([
+    (0, microservices_1.MessagePattern)('auth.admin-login'),
+    __param(0, (0, microservices_1.Payload)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "adminLogin", null);
 __decorate([
     (0, microservices_1.MessagePattern)('auth.health'),
     __metadata("design:type", Function),
