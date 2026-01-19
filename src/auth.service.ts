@@ -4,8 +4,10 @@ import { findCitizen, maskEmail, CIUDADANOS_MOCK } from './citizen-mock.data';
 import { ValidateCredentialsDto, VerifyOtpDto } from './dto/auth.dto';
 import { emailService } from './email.service';
 
+import * as crypto from 'crypto';
+
 // Almacenamiento temporal de sesiones OTP (en producción usar Redis)
-const otpSessions = new Map<string, { otp: string; expiresAt: number; email: string; nombres: string }>();
+const otpSessions = new Map<string, { otp: string; expiresAt: number; email: string; nombres: string; attempts: number }>();
 
 @Injectable()
 export class AuthService {
@@ -32,7 +34,8 @@ export class AuthService {
             otp: '',
             expiresAt: 0,
             email: citizen.email,
-            nombres: citizen.nombres
+            nombres: citizen.nombres,
+            attempts: 0 // Iniciar contador
         });
 
         return {
@@ -67,6 +70,7 @@ export class AuthService {
         // Actualizar sesión con el OTP
         session.otp = otp;
         session.expiresAt = expiresAt;
+        session.attempts = 0; // Reiniciar intentos con nuevo OTP
         otpSessions.set(cedula, session);
 
         console.log(`[AUTH SERVICE] OTP generado para ${cedula}: ${otp}`);
@@ -102,7 +106,25 @@ export class AuthService {
             });
         }
 
+        // 1. Control de Intentos (Mitigación Fuerza Bruta)
+        session.attempts = (session.attempts || 0) + 1;
+
+        if (session.attempts > 3) {
+            otpSessions.delete(cedula); // Bloquear usuario (requiere reiniciar flujo)
+            console.warn(`[AUTH SECURITY] Usuario ${cedula} bloqueado por múltiples intentos fallidos de OTP.`);
+            throw new RpcException({
+                success: false,
+                message: 'Has excedido el número máximo de intentos (3). Por seguridad, inicia el proceso nuevamente.',
+                statusCode: 429
+            });
+        }
+
+        // Actualizar intentos count
+        otpSessions.set(cedula, session);
+
         if (Date.now() > session.expiresAt) {
+            // No borramos inmediatamente para permitir reintentos si implementáramos "resend", 
+            // pero por seguridad mejor limpiar.
             otpSessions.delete(cedula);
             throw new RpcException({
                 success: false,
@@ -111,18 +133,30 @@ export class AuthService {
             });
         }
 
-        // Verificar OTP exacto (producción) o cualquier código de 8 dígitos (desarrollo)
-        const isValid = data.otpCode === session.otp;
+        // 2. Comparación de Tiempo Constante (Mitigación Timing Attack)
+        // Usamos crypto.timingSafeEqual para evitar ataques de canal lateral
+        const inputBuffer = Buffer.from(data.otpCode);
+        const targetBuffer = Buffer.from(session.otp);
+        let isValid = false;
+
+        try {
+            if (inputBuffer.length === targetBuffer.length) {
+                isValid = crypto.timingSafeEqual(inputBuffer, targetBuffer);
+            }
+        } catch (e) {
+            isValid = false;
+        }
 
         if (!isValid) {
+            const intentosRestantes = 3 - session.attempts;
             throw new RpcException({
                 success: false,
-                message: 'Código OTP incorrecto.',
+                message: `Código OTP incorrecto. Intentos restantes: ${intentosRestantes}`,
                 statusCode: 400
             });
         }
 
-        // Limpiar sesión
+        // Limpiar sesión (Éxito)
         otpSessions.delete(cedula);
 
         return {
