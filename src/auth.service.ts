@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
-import { RpcException } from '@nestjs/microservices';
+import { Injectable, Inject } from '@nestjs/common';
+import { RpcException, ClientProxy } from '@nestjs/microservices';
+import { JwtService } from '@nestjs/jwt';
+import { lastValueFrom } from 'rxjs';
 import { findCitizen, maskEmail, CIUDADANOS_MOCK } from './citizen-mock.data';
 import { ValidateCredentialsDto, VerifyOtpDto } from './dto/auth.dto';
 import { emailService } from './email.service';
-
 import * as crypto from 'crypto';
 
 // Almacenamiento temporal de sesiones OTP (en producción usar Redis)
@@ -11,6 +12,11 @@ const otpSessions = new Map<string, { otp: string; expiresAt: number; email: str
 
 @Injectable()
 export class AuthService {
+
+    constructor(
+        @Inject('BIOMETRIC_SERVICE') private readonly biometricClient: ClientProxy,
+        private readonly jwtService: JwtService
+    ) { }
 
     /**
      * Validar credenciales (cédula + código dactilar)
@@ -216,5 +222,70 @@ export class AuthService {
      */
     private generateOtp(): string {
         return Math.floor(100000 + Math.random() * 900000).toString();
+    }
+
+    /**
+     * Verificar Biometría y Generar Token
+     */
+    async verifyBiometric(cedula: string, image: string) {
+        console.log('[AUTH SERVICE] Iniciando verificación biométrica remota para:', cedula);
+
+        try {
+            // Buscar ciudadano (simulado)
+            const citizen = CIUDADANOS_MOCK.find(c => c.cedula === cedula);
+            if (!citizen) {
+                throw new RpcException({ message: 'Ciudadano no encontrado', statusCode: 404 });
+            }
+
+            // Llamar al microservicio biométrico
+            console.log('[AUTH SERVICE] Contactando biometric-service...');
+            const result = await lastValueFrom(
+                this.biometricClient.send('biometric.validate-facial', {
+                    cedula,
+                    imagenBase64: image
+                })
+            ).catch(err => {
+                console.error('[AUTH SERVICE] Error comunicación biometric-service:', err);
+                throw new RpcException({ message: 'Error de comunicación con servicio biométrico', statusCode: 503 });
+            });
+
+            console.log('[AUTH SERVICE] Respuesta biometric-service:', result);
+
+            if (!result || !result.success) {
+                throw new RpcException({
+                    success: false,
+                    message: result?.message || 'Verificación facial fallida',
+                    statusCode: 401
+                });
+            }
+
+            // Generar Token JWT
+            const payload = {
+                sub: citizen.cedula,
+                email: citizen.email,
+                role: citizen.role,
+                nombres: citizen.nombres
+            };
+
+            const token = this.jwtService.sign(payload, {
+                secret: process.env.JWT_SECRET || 'Pr0d-JWT-S3cr3t-K3y-R4nd0m-2026!',
+                expiresIn: `${citizen.expirationTime}m`
+            });
+
+            return {
+                success: true,
+                message: 'Autenticación Exitosa',
+                token: token
+            };
+
+        } catch (error) {
+            console.error('[AUTH SERVICE] Error en proceso biométrico:', error);
+            if (error instanceof RpcException) throw error;
+            throw new RpcException({
+                success: false,
+                message: error.message || 'Error interno en biometría',
+                statusCode: 500
+            });
+        }
     }
 }

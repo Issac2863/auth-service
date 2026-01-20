@@ -47,6 +47,16 @@ export class AuthController {
     }
 
     /**
+     * Validación Biométrica
+     * Pattern: auth.biometric
+     */
+    @MessagePattern('auth.biometric')
+    async verifyBiometric(@Payload('data') data: { cedula: string; image: string }) {
+        this.logger.log(`--- [PATTERN] auth.biometric para cédula: ${data.cedula} ---`);
+        return this.authService.verifyBiometric(data.cedula, data.image);
+    }
+
+    /**
      * Login Administrador
      * Pattern: auth.admin-login
      */
@@ -63,10 +73,10 @@ export class AuthController {
     @MessagePattern('auth.health')
     healthCheck() {
         this.logger.log('--- [HEALTH] Petición recibida ---');
-        return { 
-            status: 'ok', 
-            service: 'auth-service', 
-            timestamp: new Date().toISOString() 
+        return {
+            status: 'ok',
+            service: 'auth-service',
+            timestamp: new Date().toISOString()
         };
     }
 }
