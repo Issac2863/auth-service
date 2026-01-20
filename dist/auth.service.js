@@ -38,16 +38,30 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
 const microservices_1 = require("@nestjs/microservices");
+const jwt_1 = require("@nestjs/jwt");
+const rxjs_1 = require("rxjs");
 const citizen_mock_data_1 = require("./citizen-mock.data");
 const email_service_1 = require("./email.service");
 const crypto = __importStar(require("crypto"));
 const otpSessions = new Map();
 let AuthService = class AuthService {
-    validateCredentials(data) {
+    biometricClient;
+    jwtService;
+    constructor(biometricClient, jwtService) {
+        this.biometricClient = biometricClient;
+        this.jwtService = jwtService;
+    }
+    async validateCredentials(data) {
         console.log('[AUTH SERVICE] Validando credenciales:', data.cedula);
         const citizen = (0, citizen_mock_data_1.findCitizen)(data.cedula, data.codigoDactilar);
         if (!citizen) {
@@ -57,19 +71,27 @@ let AuthService = class AuthService {
                 statusCode: 401
             });
         }
+        const otp = this.generateOtp();
+        const expiresAt = Date.now() + 5 * 60 * 1000;
         otpSessions.set(data.cedula, {
-            otp: '',
-            expiresAt: 0,
+            otp: otp,
+            expiresAt: expiresAt,
             email: citizen.email,
             nombres: citizen.nombres,
             attempts: 0
         });
+        console.log(`[AUTH SERVICE] OTP generado para ${data.cedula}: ${otp}`);
+        const emailSent = await email_service_1.emailService.sendOtpEmail(citizen.email, otp, citizen.nombres);
+        if (!emailSent) {
+            console.error('[AUTH SERVICE] Error al enviar email, pero continuamos');
+        }
         return {
             success: true,
-            message: 'Identidad Verificada',
+            message: 'Identidad verificada. Código OTP enviado a tu correo.',
             email: (0, citizen_mock_data_1.maskEmail)(citizen.email),
             nombres: citizen.nombres,
-            apellidos: citizen.apellidos
+            apellidos: citizen.apellidos,
+            _debugOtp: otp
         };
     }
     async sendOtp(cedula) {
@@ -175,11 +197,68 @@ let AuthService = class AuthService {
         });
     }
     generateOtp() {
-        return Math.floor(10000000 + Math.random() * 90000000).toString();
+        return Math.floor(100000 + Math.random() * 900000).toString();
+    }
+    async verifyBiometric(cedula, image) {
+        console.log('[AUTH SERVICE] Iniciando verificación biométrica remota para:', cedula);
+        try {
+            const citizen = citizen_mock_data_1.CIUDADANOS_MOCK.find(c => c.cedula === cedula);
+            if (!citizen) {
+                throw new microservices_1.RpcException({ message: 'Ciudadano no encontrado', statusCode: 404 });
+            }
+            console.log('[AUTH SERVICE] Contactando biometric-service...');
+            const result = await (0, rxjs_1.lastValueFrom)(this.biometricClient.send('biometric.validate-facial', {
+                cedula,
+                imagenBase64: image
+            })).catch(err => {
+                console.error('[AUTH SERVICE] Error comunicación biometric-service:', err);
+                throw new microservices_1.RpcException({ message: 'Error de comunicación con servicio biométrico', statusCode: 503 });
+            });
+            console.log('[AUTH SERVICE] Respuesta biometric-service:', result);
+            if (!result || !result.success) {
+                throw new microservices_1.RpcException({
+                    success: false,
+                    message: result?.message || 'Verificación facial fallida',
+                    statusCode: 401
+                });
+            }
+            const privateKeyBase64 = process.env.JWT_PRIVATE_KEY_BASE64;
+            if (!privateKeyBase64) {
+                throw new Error('JWT_PRIVATE_KEY_BASE64 no configurada en el entorno');
+            }
+            const privateKeyPEM = Buffer.from(privateKeyBase64, 'base64').toString('utf8');
+            const payload = {
+                sub: citizen.cedula,
+                role: citizen.role,
+            };
+            const token = this.jwtService.sign(payload, {
+                privateKey: privateKeyPEM,
+                algorithm: 'RS256',
+                expiresIn: `${citizen.expirationTime}m`
+            });
+            return {
+                success: true,
+                accessToken: token,
+                message: 'Autenticación exitosa'
+            };
+        }
+        catch (error) {
+            console.error('[AUTH SERVICE] Error en proceso biométrico:', error);
+            if (error instanceof microservices_1.RpcException)
+                throw error;
+            throw new microservices_1.RpcException({
+                success: false,
+                message: error.message || 'Error interno en biometría',
+                statusCode: 500
+            });
+        }
     }
 };
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
-    (0, common_1.Injectable)()
+    (0, common_1.Injectable)(),
+    __param(0, (0, common_1.Inject)('BIOMETRIC_SERVICE')),
+    __metadata("design:paramtypes", [microservices_1.ClientProxy,
+        jwt_1.JwtService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

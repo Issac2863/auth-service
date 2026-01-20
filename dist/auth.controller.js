@@ -40,6 +40,10 @@ let AuthController = AuthController_1 = class AuthController {
         this.logger.debug(`Código OTP: ${data.otpCode}`);
         return this.authService.verifyOtp(data.cedula, { otpCode: data.otpCode });
     }
+    async verifyBiometric(data) {
+        this.logger.log(`--- [PATTERN] auth.biometric para cédula: ${data.cedula} ---`);
+        return this.authService.verifyBiometric(data.cedula, data.image);
+    }
     adminLogin(data) {
         this.logger.log('--- [PATTERN] auth.admin-login ---');
         return this.authService.adminLogin(data);
@@ -75,6 +79,13 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "verifyOtp", null);
+__decorate([
+    (0, microservices_1.MessagePattern)('auth.biometric'),
+    __param(0, (0, microservices_1.Payload)('data')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "verifyBiometric", null);
 __decorate([
     (0, microservices_1.MessagePattern)('auth.admin-login'),
     __param(0, (0, microservices_1.Payload)('data')),

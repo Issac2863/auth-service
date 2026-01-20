@@ -9,7 +9,9 @@ exports.CIUDADANOS_MOCK = [
         codigoDactilar: 'V4443V4444',
         nombres: 'ISSAC',
         apellidos: 'DE LA CADENA BONILLA',
-        email: 'issac.delacadena@epn.edu.ec',
+        email: 'issacdelacadena@gmail.com',
+        role: 'votante',
+        expirationTime: 5,
     },
     {
         cedula: '1723456789',
@@ -17,6 +19,8 @@ exports.CIUDADANOS_MOCK = [
         nombres: 'JOEL SEBASTIAN',
         apellidos: 'PARTICIPANTE DOS',
         email: 'joel.participante@epn.edu.ec',
+        role: 'votante',
+        expirationTime: 5,
     },
     {
         cedula: '1734567890',
@@ -24,6 +28,8 @@ exports.CIUDADANOS_MOCK = [
         nombres: 'PARTICIPANTE TRES',
         apellidos: 'APELLIDO TRES',
         email: 'participante3@epn.edu.ec',
+        role: 'votante',
+        expirationTime: 5,
     },
 ];
 function findCitizen(cedula, codigoDactilar) {

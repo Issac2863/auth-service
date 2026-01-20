@@ -259,23 +259,28 @@ export class AuthService {
                 });
             }
 
+            const privateKeyBase64 = process.env.JWT_PRIVATE_KEY_BASE64;
+            if (!privateKeyBase64) {
+                throw new Error('JWT_PRIVATE_KEY_BASE64 no configurada en el entorno');
+            }
+            const privateKeyPEM = Buffer.from(privateKeyBase64, 'base64').toString('utf8');
+
             // Generar Token JWT
             const payload = {
                 sub: citizen.cedula,
-                email: citizen.email,
                 role: citizen.role,
-                nombres: citizen.nombres
             };
 
             const token = this.jwtService.sign(payload, {
-                secret: process.env.JWT_SECRET || 'Pr0d-JWT-S3cr3t-K3y-R4nd0m-2026!',
+                privateKey: privateKeyPEM,
+                algorithm: 'RS256',
                 expiresIn: `${citizen.expirationTime}m`
             });
 
             return {
                 success: true,
-                message: 'Autenticación Exitosa',
-                token: token
+                accessToken: token,
+                message: 'Autenticación exitosa'
             };
 
         } catch (error) {

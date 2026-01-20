@@ -1,12 +1,18 @@
+import { ClientProxy } from '@nestjs/microservices';
+import { JwtService } from '@nestjs/jwt';
 import { ValidateCredentialsDto, VerifyOtpDto } from './dto/auth.dto';
 export declare class AuthService {
-    validateCredentials(data: ValidateCredentialsDto): {
+    private readonly biometricClient;
+    private readonly jwtService;
+    constructor(biometricClient: ClientProxy, jwtService: JwtService);
+    validateCredentials(data: ValidateCredentialsDto): Promise<{
         success: boolean;
         message: string;
         email: string;
         nombres: string;
         apellidos: string;
-    };
+        _debugOtp: string;
+    }>;
     sendOtp(cedula: string): Promise<{
         success: boolean;
         message: string;
@@ -26,4 +32,9 @@ export declare class AuthService {
         };
     };
     private generateOtp;
+    verifyBiometric(cedula: string, image: string): Promise<{
+        success: boolean;
+        accessToken: string;
+        message: string;
+    }>;
 }

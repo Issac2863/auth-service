@@ -4,13 +4,14 @@ export declare class AuthController {
     private readonly authService;
     private readonly logger;
     constructor(authService: AuthService);
-    validateCredentials(data: ValidateCredentialsDto): {
+    validateCredentials(data: ValidateCredentialsDto): Promise<{
         success: boolean;
         message: string;
         email: string;
         nombres: string;
         apellidos: string;
-    };
+        _debugOtp: string;
+    }>;
     sendOtp(data: {
         cedula: string;
     }): Promise<{
@@ -25,6 +26,14 @@ export declare class AuthController {
         success: boolean;
         message: string;
     };
+    verifyBiometric(data: {
+        cedula: string;
+        image: string;
+    }): Promise<{
+        success: boolean;
+        accessToken: string;
+        message: string;
+    }>;
     adminLogin(data: any): {
         success: boolean;
         message: string;

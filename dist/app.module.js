@@ -12,6 +12,7 @@ const auth_controller_1 = require("./auth.controller");
 const auth_service_1 = require("./auth.service");
 const config_1 = require("@nestjs/config");
 const jwt_1 = require("@nestjs/jwt");
+const microservices_1 = require("@nestjs/microservices");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -22,6 +23,16 @@ exports.AppModule = AppModule = __decorate([
                 isGlobal: true,
             }),
             jwt_1.JwtModule.register({}),
+            microservices_1.ClientsModule.register([
+                {
+                    name: 'BIOMETRIC_SERVICE',
+                    transport: microservices_1.Transport.TCP,
+                    options: {
+                        host: process.env.BIOMETRIC_SERVICE_HOST || 'biometric-service.railway.internal',
+                        port: parseInt(process.env.BIOMETRIC_SERVICE_PORT || '3003'),
+                    },
+                },
+            ]),
         ],
         controllers: [auth_controller_1.AuthController],
         providers: [auth_service_1.AuthService],
