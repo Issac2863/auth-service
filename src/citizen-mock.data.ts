@@ -25,7 +25,7 @@ export const CIUDADANOS_MOCK: CitizenMock[] = [
     },
     {
         cedula: '1724915770',
-        codigoDactilar: 'V443V3442',
+        codigoDactilar: 'V4443V3442',
         nombres: 'JOEL',
         apellidos: 'DEFAZ',
         email: 'joe.def2019@gmail.com',
