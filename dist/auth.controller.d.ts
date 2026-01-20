@@ -2,6 +2,7 @@ import { AuthService } from './auth.service';
 import { ValidateCredentialsDto } from './dto/auth.dto';
 export declare class AuthController {
     private readonly authService;
+    private readonly logger;
     constructor(authService: AuthService);
     validateCredentials(data: ValidateCredentialsDto): {
         success: boolean;
