@@ -19,7 +19,7 @@ export const CIUDADANOS_MOCK: CitizenMock[] = [
         codigoDactilar: 'V4443V4444',
         nombres: 'ISSAC',
         apellidos: 'DE LA CADENA BONILLA',
-        email: 'issac.delacadena@epn.edu.ec',
+        email: 'issacdelacadena@gmail.com', // Email registrado en Resend para pruebas
         role: 'votante',
         expirationTime: 5,
     },
