@@ -14,8 +14,9 @@ export class AuthService {
 
     /**
      * Validar credenciales (cédula + código dactilar)
+     * Automáticamente genera y envía el OTP al email
      */
-    validateCredentials(data: ValidateCredentialsDto) {
+    async validateCredentials(data: ValidateCredentialsDto) {
         console.log('[AUTH SERVICE] Validando credenciales:', data.cedula);
 
         const citizen = findCitizen(data.cedula, data.codigoDactilar);
@@ -28,22 +29,35 @@ export class AuthService {
             });
         }
 
-        // Guardar info del ciudadano para enviar OTP después
-        // NO generamos OTP aquí, esperamos a que el usuario lo solicite
+        // Generar OTP de 8 dígitos y enviarlo automáticamente
+        const otp = this.generateOtp();
+        const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutos
+
+        // Guardar sesión con OTP
         otpSessions.set(data.cedula, {
-            otp: '',
-            expiresAt: 0,
+            otp: otp,
+            expiresAt: expiresAt,
             email: citizen.email,
             nombres: citizen.nombres,
-            attempts: 0 // Iniciar contador
+            attempts: 0
         });
+
+        console.log(`[AUTH SERVICE] OTP generado para ${data.cedula}: ${otp}`);
+
+        // Enviar email automáticamente
+        const emailSent = await emailService.sendOtpEmail(citizen.email, otp, citizen.nombres);
+
+        if (!emailSent) {
+            console.error('[AUTH SERVICE] Error al enviar email, pero continuamos');
+        }
 
         return {
             success: true,
-            message: 'Identidad Verificada',
+            message: 'Identidad verificada. Código OTP enviado a tu correo.',
             email: maskEmail(citizen.email),
             nombres: citizen.nombres,
-            apellidos: citizen.apellidos
+            apellidos: citizen.apellidos,
+            _debugOtp: otp // Solo para desarrollo
         };
     }
 
