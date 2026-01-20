@@ -9,6 +9,8 @@ export interface CitizenMock {
     nombres: string;
     apellidos: string;
     email: string;
+    role: string;
+    expirationTime: number;
 }
 
 export const CIUDADANOS_MOCK: CitizenMock[] = [
@@ -18,6 +20,8 @@ export const CIUDADANOS_MOCK: CitizenMock[] = [
         nombres: 'ISSAC',
         apellidos: 'DE LA CADENA BONILLA',
         email: 'issac.delacadena@epn.edu.ec',
+        role: 'votante',
+        expirationTime: 5,
     },
     {
         cedula: '1723456789',
@@ -25,6 +29,8 @@ export const CIUDADANOS_MOCK: CitizenMock[] = [
         nombres: 'JOEL SEBASTIAN',
         apellidos: 'PARTICIPANTE DOS',
         email: 'joel.participante@epn.edu.ec',
+        role: 'votante',
+        expirationTime: 5,
     },
     {
         cedula: '1734567890',
@@ -32,6 +38,8 @@ export const CIUDADANOS_MOCK: CitizenMock[] = [
         nombres: 'PARTICIPANTE TRES',
         apellidos: 'APELLIDO TRES',
         email: 'participante3@epn.edu.ec',
+        role: 'votante',
+        expirationTime: 5,
     },
 ];
 
