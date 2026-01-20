@@ -17,7 +17,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         transport: Transport.TCP,
         options: {
           host: process.env.BIOMETRIC_SERVICE_HOST || 'biometric-service.railway.internal',
-          port: parseInt(process.env.BIOMETRIC_SERVICE_PORT || '3002'),
+          port: parseInt(process.env.BIOMETRIC_SERVICE_PORT || '3003'),
         },
       },
     ]),
