@@ -1,32 +1,29 @@
-import * as nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
 /**
  * Servicio de Email para envío de códigos OTP
+ * Usa Resend API (funciona en Railway sin bloqueos SMTP)
  */
 export class EmailService {
-    private transporter: nodemailer.Transporter;
+  private resend: Resend;
 
-    constructor() {
-        // Configurar transporter con Gmail
-        // NOTA: En producción, usar variables de entorno
-        this.transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.EMAIL_USER || 'smtpepn2026@gmail.com',
-                pass: process.env.EMAIL_PASSWORD || 'atqh eize uexy fxmn',
-            },
-        });
-    }
+  constructor() {
+    // API Key de Resend - en producción usar variable de entorno
+    this.resend = new Resend(process.env.RESEND_API_KEY || 're_MQv5eWkh_FaHYnrmfgaZJtfax4d7yGSim');
+  }
 
-    /**
-     * Enviar código OTP por email
-     */
-    async sendOtpEmail(to: string, otp: string, nombres: string): Promise<boolean> {
-        const mailOptions = {
-            from: '"SEVOTEC - CNE" <smtpepn2026@gmail.com>',
-            to: to,
-            subject: '🔐 Código de Verificación - SEVOTEC',
-            html: `
+  /**
+   * Enviar código OTP por email
+   */
+  async sendOtpEmail(to: string, otp: string, nombres: string): Promise<boolean> {
+    try {
+      console.log(`[EMAIL SERVICE] Enviando OTP a ${to} via Resend...`);
+
+      const { data, error } = await this.resend.emails.send({
+        from: 'SEVOTEC <onboarding@resend.dev>',
+        to: [to],
+        subject: '🔐 Código de Verificación - SEVOTEC',
+        html: `
         <!DOCTYPE html>
         <html>
         <head>
@@ -62,18 +59,20 @@ export class EmailService {
         </body>
         </html>
       `,
-        };
+      });
 
-        try {
-            console.log(`[EMAIL SERVICE] Enviando OTP a ${to}...`);
-            const info = await this.transporter.sendMail(mailOptions);
-            console.log(`[EMAIL SERVICE] Email enviado: ${info.messageId}`);
-            return true;
-        } catch (error) {
-            console.error('[EMAIL SERVICE] Error al enviar email:', error);
-            return false;
-        }
+      if (error) {
+        console.error('[EMAIL SERVICE] Error Resend:', error);
+        return false;
+      }
+
+      console.log(`[EMAIL SERVICE] Email enviado exitosamente: ${data?.id}`);
+      return true;
+    } catch (error) {
+      console.error('[EMAIL SERVICE] Error al enviar email:', error);
+      return false;
     }
+  }
 }
 
 // Singleton instance
