@@ -21,7 +21,7 @@ export const CIUDADANOS_MOCK: CitizenMock[] = [
         apellidos: 'DE LA CADENA BONILLA',
         email: 'issacdelacadena@gmail.com', // Email registrado en Resend para pruebas
         role: 'votante',
-        expirationTime: 5,
+        expirationTime: 10,
     },
     {
         cedula: '1724915770',
@@ -30,7 +30,7 @@ export const CIUDADANOS_MOCK: CitizenMock[] = [
         apellidos: 'DEFAZ',
         email: 'joe.def2019@gmail.com',
         role: 'votante',
-        expirationTime: 5,
+        expirationTime: 10,
     },
     {
         cedula: '1734567890',
@@ -39,7 +39,7 @@ export const CIUDADANOS_MOCK: CitizenMock[] = [
         apellidos: 'APELLIDO TRES',
         email: 'participante3@epn.edu.ec',
         role: 'votante',
-        expirationTime: 5,
+        expirationTime: 10,
     },
 ];
 

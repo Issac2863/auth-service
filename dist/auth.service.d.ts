@@ -35,6 +35,7 @@ export declare class AuthService {
     verifyBiometric(cedula: string, image: string): Promise<{
         success: boolean;
         accessToken: string;
+        expirationTime: number;
         message: string;
     }>;
 }

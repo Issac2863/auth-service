@@ -32,6 +32,7 @@ export declare class AuthController {
     }): Promise<{
         success: boolean;
         accessToken: string;
+        expirationTime: number;
         message: string;
     }>;
     adminLogin(data: any): {

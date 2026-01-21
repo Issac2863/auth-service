@@ -270,22 +270,24 @@ export class AuthService {
                 throw new Error('JWT_PRIVATE_KEY_BASE64 no configurada en el entorno');
             }
             const privateKeyPEM = Buffer.from(privateKeyBase64, 'base64').toString('utf8');
-
             // Generar Token JWT
             const payload = {
                 sub: citizen.cedula,
                 role: citizen.role,
             };
-
+            const nowInSeconds = Math.floor(Date.now() / 1000);
+            const durationInSeconds = citizen.expirationTime * 60;
+            const expirationTimestamp = nowInSeconds + durationInSeconds;
             const token = this.jwtService.sign(payload, {
                 privateKey: privateKeyPEM,
                 algorithm: 'RS256',
-                expiresIn: `${citizen.expirationTime}m`
+                expiresIn: durationInSeconds
             });
 
             return {
                 success: true,
                 accessToken: token,
+                expirationTime: expirationTimestamp,
                 message: 'Autenticación exitosa'
             };
 
