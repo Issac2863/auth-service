@@ -1,82 +1,100 @@
 import { Controller, UseGuards, UseInterceptors, Logger } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { AuthService } from './auth.service';
+import { AuthService } from './services/auth.service';
 import { ValidateCredentialsDto } from './dto/auth.dto';
-import { InternalSecurityGuard } from './guards/internal-security.guard';
-import { InternalSecurityInterceptor } from './interceptors/internal-security.interceptor';
+import { InternalApiKeyGuard } from './guards/internalApiKey.guard';
+import { EnvelopeOpenerInterceptor } from './interceptors/envelopeOpener.interceptor';
+import { AdminService } from './services/admin.service';
 
+/**
+ * @class AuthController
+ * @description Controlador que expone los endpoints de autenticación vía TCP.
+ * Protegido con guard e interceptor de seguridad interna para validar comunicaciones del API Gateway.
+ */
 @Controller()
-@UseGuards(InternalSecurityGuard)
-@UseInterceptors(InternalSecurityInterceptor)
+@UseGuards(InternalApiKeyGuard) // Valida la autenticidad de las peticiones del Gateway
+@UseInterceptors(EnvelopeOpenerInterceptor) // Desencripta y valida sobres de seguridad
 export class AuthController {
-    // Instanciamos el logger con el nombre de la clase
     private readonly logger = new Logger(AuthController.name);
 
-    constructor(private readonly authService: AuthService) { }
+    constructor(
+        private readonly authService: AuthService,
+        private readonly adminService: AdminService
+
+    ) { }
 
     /**
-     * Validar cédula y código dactilar
-     * Pattern: auth.validate-credentials
+     * @method validateCredentials
+     * @description Primer paso del flujo: valida las credenciales básicas del ciudadano (cédula y código dactilar).
+     * @param {ValidateCredentialsDto} data - DTO con cédula y código dactilar del ciudadano.
+     * @returns {object} Resultado de la validación de credenciales.
      */
     @MessagePattern('auth.validate-credentials')
     validateCredentials(@Payload('data') data: ValidateCredentialsDto) {
-        this.logger.log('--- [PATTERN] auth.validate-credentials ---');
-        this.logger.debug(`Datos recibidos: ${JSON.stringify(data)}`);
+        this.logger.log(`[Step 1] Validando credenciales para cédula: ${data.cedula}`);
         return this.authService.validateCredentials(data);
     }
 
     /**
-     * Enviar código OTP al email
-     * Pattern: auth.send-otp
+     * @method sendOtp
+     * @description Envía un código OTP al email del ciudadano previamente validado.
+     * @param {object} data - Objeto con la cédula del ciudadano.
+     * @returns {Promise<object>} Confirmación del envío del OTP.
      */
     @MessagePattern('auth.send-otp')
     async sendOtp(@Payload('data') data: { cedula: string }) {
-        this.logger.log(`--- [PATTERN] auth.send-otp para cédula: ${data.cedula} ---`);
+        this.logger.log(`[OTP Request] Enviando código OTP para cédula: ${data.cedula}`);
         return this.authService.sendOtp(data.cedula);
     }
 
     /**
-     * Verificar código OTP
-     * Pattern: auth.verify-otp
+     * @method verifyOtp
+     * @description Segundo paso del flujo: verifica el código OTP proporcionado por el usuario.
+     * @param {object} data - Objeto con cédula y código OTP.
+     * @returns {object} Resultado de la verificación del OTP.
      */
     @MessagePattern('auth.verify-otp')
-    verifyOtp(@Payload('data') data: { cedula: string; otpCode: string }) {
-        this.logger.log(`--- [PATTERN] auth.verify-otp para cédula: ${data.cedula} ---`);
-        this.logger.debug(`Código OTP: ${data.otpCode}`);
-        return this.authService.verifyOtp(data.cedula, { otpCode: data.otpCode });
+    verifyOtp(@Payload('data') data: { id: string; otpCode: string }) {
+        this.logger.log(`[Step 2] Verificando OTP para cédula: ${data.id}`);
+        return this.authService.verifyOtp(data);
     }
 
     /**
-     * Validación Biométrica
-     * Pattern: auth.biometric
+     * @method verifyBiometric
+     * @description Paso final del flujo: validación biométrica del rostro del usuario.
+     * @param {object} data - Objeto con cédula e imagen biométrica en base64.
+     * @returns {Promise<object>} Resultado de la verificación biométrica y token de acceso.
      */
     @MessagePattern('auth.biometric')
-    async verifyBiometric(@Payload('data') data: { cedula: string; image: string }) {
-        this.logger.log(`--- [PATTERN] auth.biometric para cédula: ${data.cedula} ---`);
-        return this.authService.verifyBiometric(data.cedula, data.image);
+    async verifyBiometric(@Payload('data') data: { id: string; image: string }) {
+        this.logger.log(`[Step 3] Procesando verificación biométrica para cédula: ${data.id}`);
+        return this.authService.verifyBiometric(data.id, data.image);
     }
 
     /**
-     * Login Administrador
-     * Pattern: auth.admin-login
+     * @method adminLogin
+     * @description Autentica las credenciales de un administrador del sistema.
+     * @param {any} data - Credenciales del administrador.
+     * @returns {object} Resultado de la autenticación administrativa.
      */
     @MessagePattern('auth.admin-login')
-    adminLogin(@Payload('data') data: any) {
-        this.logger.log('--- [PATTERN] auth.admin-login ---');
-        return this.authService.adminLogin(data);
+    adminLogin(@Payload('data') data: {email: string; password: string}) {
+        this.logger.log(`Procesando autenticación de administrador: ${data.email}`);
+        return this.adminService.adminLogin(data);
     }
 
     /**
-     * Health check
-     * Pattern: auth.health
+     * @method healthCheck
+     * @description Endpoint de verificación de estado del microservicio.
+     * @returns {object} Estado actual del servicio con timestamp.
      */
     @MessagePattern('auth.health')
     healthCheck() {
-        this.logger.log('--- [HEALTH] Petición recibida ---');
         return {
             status: 'ok',
             service: 'auth-service',
             timestamp: new Date().toISOString()
         };
     }
+    
 }

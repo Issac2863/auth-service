@@ -1,33 +1,32 @@
-import { AuthService } from './auth.service';
+import { AuthService } from './services/auth.service';
 import { ValidateCredentialsDto } from './dto/auth.dto';
+import { AdminService } from './services/admin.service';
 export declare class AuthController {
     private readonly authService;
+    private readonly adminService;
     private readonly logger;
-    constructor(authService: AuthService);
-    validateCredentials(data: ValidateCredentialsDto): Promise<{
+    constructor(authService: AuthService, adminService: AdminService);
+    validateCredentials(data: ValidateCredentialsDto): Promise<void | {
         success: boolean;
+        id: any;
         message: string;
         email: string;
-        nombres: string;
-        apellidos: string;
-        _debugOtp: string;
     }>;
     sendOtp(data: {
         cedula: string;
     }): Promise<{
         success: boolean;
         message: string;
-        _debugOtp: string;
     }>;
     verifyOtp(data: {
-        cedula: string;
+        id: string;
         otpCode: string;
     }): {
         success: boolean;
         message: string;
     };
     verifyBiometric(data: {
-        cedula: string;
+        id: string;
         image: string;
     }): Promise<{
         success: boolean;
@@ -35,15 +34,19 @@ export declare class AuthController {
         expirationTime: number;
         message: string;
     }>;
-    adminLogin(data: any): {
+    adminLogin(data: {
+        email: string;
+        password: string;
+    }): Promise<{
         success: boolean;
         message: string;
-        token: string;
+        accessToken: string;
+        expirationTime: number;
         user: {
             email: any;
-            role: string;
+            role: any;
         };
-    };
+    }>;
     healthCheck(): {
         status: string;
         service: string;

@@ -16,40 +16,40 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
 const microservices_1 = require("@nestjs/microservices");
-const auth_service_1 = require("./auth.service");
+const auth_service_1 = require("./services/auth.service");
 const auth_dto_1 = require("./dto/auth.dto");
-const internal_security_guard_1 = require("./guards/internal-security.guard");
-const internal_security_interceptor_1 = require("./interceptors/internal-security.interceptor");
+const internalApiKey_guard_1 = require("./guards/internalApiKey.guard");
+const envelopeOpener_interceptor_1 = require("./interceptors/envelopeOpener.interceptor");
+const admin_service_1 = require("./services/admin.service");
 let AuthController = AuthController_1 = class AuthController {
     authService;
+    adminService;
     logger = new common_1.Logger(AuthController_1.name);
-    constructor(authService) {
+    constructor(authService, adminService) {
         this.authService = authService;
+        this.adminService = adminService;
     }
     validateCredentials(data) {
-        this.logger.log('--- [PATTERN] auth.validate-credentials ---');
-        this.logger.debug(`Datos recibidos: ${JSON.stringify(data)}`);
+        this.logger.log(`[Step 1] Validando credenciales para cédula: ${data.cedula}`);
         return this.authService.validateCredentials(data);
     }
     async sendOtp(data) {
-        this.logger.log(`--- [PATTERN] auth.send-otp para cédula: ${data.cedula} ---`);
+        this.logger.log(`[OTP Request] Enviando código OTP para cédula: ${data.cedula}`);
         return this.authService.sendOtp(data.cedula);
     }
     verifyOtp(data) {
-        this.logger.log(`--- [PATTERN] auth.verify-otp para cédula: ${data.cedula} ---`);
-        this.logger.debug(`Código OTP: ${data.otpCode}`);
-        return this.authService.verifyOtp(data.cedula, { otpCode: data.otpCode });
+        this.logger.log(`[Step 2] Verificando OTP para cédula: ${data.id}`);
+        return this.authService.verifyOtp(data);
     }
     async verifyBiometric(data) {
-        this.logger.log(`--- [PATTERN] auth.biometric para cédula: ${data.cedula} ---`);
-        return this.authService.verifyBiometric(data.cedula, data.image);
+        this.logger.log(`[Step 3] Procesando verificación biométrica para cédula: ${data.id}`);
+        return this.authService.verifyBiometric(data.id, data.image);
     }
     adminLogin(data) {
-        this.logger.log('--- [PATTERN] auth.admin-login ---');
-        return this.authService.adminLogin(data);
+        this.logger.log(`Procesando autenticación de administrador: ${data.email}`);
+        return this.adminService.adminLogin(data);
     }
     healthCheck() {
-        this.logger.log('--- [HEALTH] Petición recibida ---');
         return {
             status: 'ok',
             service: 'auth-service',
@@ -101,8 +101,9 @@ __decorate([
 ], AuthController.prototype, "healthCheck", null);
 exports.AuthController = AuthController = AuthController_1 = __decorate([
     (0, common_1.Controller)(),
-    (0, common_1.UseGuards)(internal_security_guard_1.InternalSecurityGuard),
-    (0, common_1.UseInterceptors)(internal_security_interceptor_1.InternalSecurityInterceptor),
-    __metadata("design:paramtypes", [auth_service_1.AuthService])
+    (0, common_1.UseGuards)(internalApiKey_guard_1.InternalApiKeyGuard),
+    (0, common_1.UseInterceptors)(envelopeOpener_interceptor_1.EnvelopeOpenerInterceptor),
+    __metadata("design:paramtypes", [auth_service_1.AuthService,
+        admin_service_1.AdminService])
 ], AuthController);
 //# sourceMappingURL=auth.controller.js.map
