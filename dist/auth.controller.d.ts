@@ -11,6 +11,7 @@ export declare class AuthController {
         id: any;
         message: string;
         email: string;
+        otpDebug: string;
     }>;
     sendOtp(data: {
         cedula: string;

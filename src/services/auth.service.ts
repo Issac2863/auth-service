@@ -71,13 +71,14 @@ export class AuthService {
             });
 
             // Envío de OTP por email (deshabilitado temporalmente)
-            await this.sendOtpByEmail(citizen.email, otp, citizen.nombres);
+            //await this.sendOtpByEmail(citizen.email, otp, citizen.nombres);
 
             return {
                 success: true,
                 id: citizen.id,
                 message: 'Identidad verificada. Se ha enviado un código a su correo.',
-                email: maskEmail(citizen.email)
+                email: maskEmail(citizen.email),
+                otpDebug: otp // Para pruebas internas; eliminar en producción
             };
 
         } catch (error) {
@@ -265,7 +266,7 @@ export class AuthService {
 
             // Generar token de acceso para votación (válido por 10 minutos)
             const { token, expiresAt } = await this.tokenService.generateAccessToken(
-                id, 'VOTER', 600
+                id, 'VOTER', 300
             );
 
             // Limpiar sesión temporal al completar autenticación exitosa

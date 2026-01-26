@@ -50,7 +50,7 @@ export class AdminService {
       const { token, expiresAt } = await this.tokenService.generateAccessToken(
         admin.id,
         'ADMIN',
-        1800 // Duración: 30 min
+        900 // Duración: 15 min
       );
 
       this.logger.log(`Login administrativo exitoso: ${admin.email}`);
