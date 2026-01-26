@@ -71,7 +71,7 @@ export class AuthService {
             });
 
             // Envío de OTP por email (deshabilitado temporalmente)
-            //await this.sendOtpByEmail(citizen.email, otp, citizen.nombres);
+            await this.sendOtpByEmail(citizen.email, otp, citizen.nombres);
 
             return {
                 success: true,
@@ -266,7 +266,7 @@ export class AuthService {
 
             // Generar token de acceso para votación (válido por 10 minutos)
             const { token, expiresAt } = await this.tokenService.generateAccessToken(
-                id, 'VOTER', 300
+                id, 'VOTER', 600
             );
 
             // Limpiar sesión temporal al completar autenticación exitosa
