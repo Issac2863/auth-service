@@ -77,8 +77,7 @@ export class AuthService {
                 success: true,
                 id: citizen.id,
                 message: 'Identidad verificada. Se ha enviado un código a su correo.',
-                email: maskEmail(citizen.email),
-                otpDebug: otp // Para pruebas internas; eliminar en producción
+                email: maskEmail(citizen.email)
             };
 
         } catch (error) {
