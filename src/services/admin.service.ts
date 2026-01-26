@@ -2,6 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { RpcException } from "@nestjs/microservices";
 import { SupabaseService } from "./supabase.service";
 import { TokenService } from "src/security/generateToken.service";
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AdminService {
@@ -10,7 +11,7 @@ export class AdminService {
   constructor(
     private readonly supabase: SupabaseService,
     private readonly tokenService: TokenService // Inyectamos el servicio de tokens
-  ) {}
+  ) { }
 
   async adminLogin(data: any) {
     this.logger.log(`Intento de inicio de sesión administrativo: ${data.email}`);
@@ -30,7 +31,12 @@ export class AdminService {
       }
 
       // 2. Validar credenciales
-      if (!admin || admin.password !== data.password) {
+      let isPasswordValid = false;
+      if (admin) {
+        isPasswordValid = await bcrypt.compare(data.password, admin.password);
+      }
+
+      if (!isPasswordValid) {
         this.logger.warn(`Credenciales administrativas inválidas para: ${data.email}`);
         throw new RpcException({
           success: false,
@@ -42,12 +48,12 @@ export class AdminService {
       // 3. Éxito: Generar Token Real
       // Usamos el email como 'sub' y asignamos el rol 'ADMIN'
       const { token, expiresAt } = await this.tokenService.generateAccessToken(
-        admin.id, 
-        'ADMIN', 
-        3600 // Duración: 1 hora
+        admin.id,
+        'ADMIN',
+        1800 // Duración: 30 min
       );
 
-      this.logger.log(`✅ Login administrativo exitoso: ${admin.email}`);
+      this.logger.log(`Login administrativo exitoso: ${admin.email}`);
 
       return {
         success: true,
